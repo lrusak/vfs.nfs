@@ -19,6 +19,7 @@
  */
 
 #include "NFSConnection.h"
+#include "utils/CommonDefines.h"
 
 struct NFSContext
 {
@@ -65,7 +66,7 @@ protected:
   std::string m_exportPath;
 };
 
-class CMyAddon : public kodi::addon::CAddonBase
+class DLL_PRIVATE CMyAddon : public kodi::addon::CAddonBase
 {
 public:
   CMyAddon() { }
