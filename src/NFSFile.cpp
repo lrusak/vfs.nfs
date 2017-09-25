@@ -210,7 +210,7 @@ ssize_t CNFSFile::Write(void* context, const void* lpBuf, size_t uiBufSize)
     if (writtenBytes < 0)
     {
       kodi::Log(ADDON_LOG_ERROR, "Failed to pwrite(%s) %s",
-                ctx->filename, nfs_get_error(ctx->pNfsContext));
+                ctx->filename.c_str(), nfs_get_error(ctx->pNfsContext));
       break;
     }
   }
@@ -360,7 +360,7 @@ bool CNFSFile::Close(void* context)
 
     if (ret < 0)
     {
-      kodi::Log(ADDON_LOG_ERROR, "Failed to close(%s) - %s", ctx->filename, nfs_get_error(ctx->pNfsContext));
+      kodi::Log(ADDON_LOG_ERROR, "Failed to close(%s) - %s", ctx->filename.c_str(), nfs_get_error(ctx->pNfsContext));
     }
   }
 
