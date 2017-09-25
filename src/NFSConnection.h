@@ -88,7 +88,7 @@ private:
   tFileKeepAliveMap m_KeepAliveTimeouts;//mapping filehandles to its idle timeout
   tOpenContextMap m_openContextMap;//unique map for tracking all open contexts
   uint64_t m_lastAccessedTime;//last access time for m_pNfsContext
-  std::list<std::string> m_exportList;//list of exported pathes of current connected servers
+  std::list<std::string> m_exportList;//list of exported paths of current connected servers
   P8PLATFORM::CMutex m_keepAliveLock;
   P8PLATFORM::CMutex m_openContextLock;
 

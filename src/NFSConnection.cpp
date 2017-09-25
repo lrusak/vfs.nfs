@@ -98,19 +98,23 @@ std::list<std::string> CNFSConnection::GetExportList()
 
 void CNFSConnection::clearMembers()
 {
+  // NOTE - DON'T CLEAR m_exportList HERE!
+  // splitUrlIntoExportAndPath checks for m_exportList.empty()
+  // and would query the server in an excessive unwanted fashion
+  // also don't clear m_KeepAliveTimeouts here because we
+  // would loose any "paused" file handles during export change
   m_exportPath.clear();
   m_hostName.clear();
   m_exportList.clear();
   m_writeChunkSize = 0;
   m_readChunkSize = 0;
   m_pNfsContext = NULL;
-  m_KeepAliveTimeouts.clear();
 }
 
 void CNFSConnection::destroyOpenContexts()
 {
   m_openContextLock.Lock();
-  for(tOpenContextMap::iterator it = m_openContextMap.begin();it!=m_openContextMap.end();it++)
+  for(tOpenContextMap::iterator it = m_openContextMap.begin();it!=m_openContextMap.end();++it)
   {
     nfs_destroy_context(it->second.pContext);
   }
@@ -231,14 +235,14 @@ bool CNFSConnection::splitUrlIntoExportAndPath(const std::string& hostname,
 
     std::list<std::string>::iterator it;
 
-    for(it=m_exportList.begin();it!=m_exportList.end();it++)
+    for(it=m_exportList.begin();it!=m_exportList.end();++it)
     {
       //if path starts with the current export path
       if(path.compare(0, it->size(), *it) == 0)
       {
         exportPath = *it;
         //handle special case where root is exported
-        //in that case we don't want to stripp off to
+        //in that case we don't want to strip off to
         //much from the path
         if( exportPath == "/" )
           relativePath = "//" + path.substr(exportPath.length()-1);
@@ -255,12 +259,11 @@ bool CNFSConnection::splitUrlIntoExportAndPath(const std::string& hostname,
 bool CNFSConnection::Connect(const VFSURL& url, std::string& relativePath)
 {
   P8PLATFORM::CLockObject lock(*this);
-  bool ret = false;
   int nfsRet = 0;
   std::string exportPath;
 
   resolveHost(url.hostname);
-  ret = splitUrlIntoExportAndPath(url.hostname, url.filename, exportPath, relativePath);
+  bool ret = splitUrlIntoExportAndPath(url.hostname, url.filename, exportPath, relativePath);
 
   if( (ret && (exportPath != m_exportPath  ||
       m_hostName != url.hostname))    ||
@@ -309,6 +312,8 @@ void CNFSConnection::Deinit()
     m_pNfsContext = NULL;
   }
   clearMembers();
+  // clear any keep alive timouts on deinit
+  m_KeepAliveTimeouts.clear();
 }
 
 /* This is called from CApplication::ProcessSlow() and is used to tell if nfs have been idle for too long */
@@ -317,7 +322,7 @@ void CNFSConnection::CheckIfIdle()
   /* We check if there are open connections. This is done without a lock to not halt the mainthread. It should be thread safe as
    worst case scenario is that m_OpenConnections could read 0 and then changed to 1 if this happens it will enter the if wich will lead to another check, wich is locked.  */
   if (m_OpenConnections == 0 && m_pNfsContext != NULL)
-  { /* I've set the the maxiumum IDLE time to be 1 min and 30 sec. */
+  { /* I've set the the maximum IDLE time to be 1 min and 30 sec. */
     P8PLATFORM::CLockObject lock(*this);
     if (m_OpenConnections == 0 /* check again - when locked */)
     {
@@ -337,7 +342,7 @@ void CNFSConnection::CheckIfIdle()
   {
     P8PLATFORM::CLockObject lock(m_keepAliveLock);
     //handle keep alive on opened files
-    for( tFileKeepAliveMap::iterator it = m_KeepAliveTimeouts.begin();it!=m_KeepAliveTimeouts.end();it++)
+    for( tFileKeepAliveMap::iterator it = m_KeepAliveTimeouts.begin();it!=m_KeepAliveTimeouts.end();++it)
     {
       if(it->second.refreshCounter > 0)
       {
@@ -365,7 +370,15 @@ void CNFSConnection::resetKeepAlive(std::string _exportPath, struct nfsfh  *_pFi
 {
   P8PLATFORM::CLockObject lock(m_keepAliveLock);
   //refresh last access time of the context aswell
-  getContextFromMap(_exportPath, true);
+  struct nfs_context *pContext = getContextFromMap(_exportPath, true);
+
+  // if we keep alive using m_pNfsContext we need to mark
+  // its last access time too here
+  if (m_pNfsContext == pContext)
+  {
+    m_lastAccessedTime = P8PLATFORM::GetTimeMs();
+  }
+
   //adds new keys - refreshs existing ones
   m_KeepAliveTimeouts[_pFileHandle].exportPath = _exportPath;
   m_KeepAliveTimeouts[_pFileHandle].refreshCounter = KEEP_ALIVE_TIMEOUT;
