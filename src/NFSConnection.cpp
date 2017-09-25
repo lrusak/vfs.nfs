@@ -73,7 +73,7 @@ CNFSConnection::~CNFSConnection()
 void CNFSConnection::resolveHost(const std::string& hostname)
 {
   //resolve if hostname has changed
-  kodi::network::DNSLookup(hostname.c_str(), m_resolvedHostName);
+  kodi::network::DNSLookup(hostname, m_resolvedHostName);
 }
 
 std::list<std::string> CNFSConnection::GetExportList()
@@ -125,7 +125,7 @@ void CNFSConnection::destroyOpenContexts()
 void CNFSConnection::destroyContext(const std::string& exportName)
 {
   m_openContextLock.Lock();
-  tOpenContextMap::iterator it = m_openContextMap.find(exportName.c_str());
+  tOpenContextMap::iterator it = m_openContextMap.find(exportName);
   if (it != m_openContextMap.end())
   {
     nfs_destroy_context(it->second.pContext);
@@ -139,7 +139,7 @@ struct nfs_context *CNFSConnection::getContextFromMap(const std::string& exportn
   struct nfs_context *pRet = NULL;
   m_openContextLock.Lock();
 
-  tOpenContextMap::iterator it = m_openContextMap.find(exportname.c_str());
+  tOpenContextMap::iterator it = m_openContextMap.find(exportname);
   if(it != m_openContextMap.end())
   {
     //check if context has timed out already
@@ -150,7 +150,7 @@ struct nfs_context *CNFSConnection::getContextFromMap(const std::string& exportn
       //refresh access time of that
       //context and return it
       if (!forceCacheHit) // only log it if this isn't the resetkeepalive on each read ;)
-        kodi::Log(ADDON_LOG_DEBUG, "NFS: Refreshing context for %s, old: %" PRId64 ", new: %" PRId64, exportname.c_str(), it->second.lastAccessedTime, now);
+        kodi::Log(ADDON_LOG_DEBUG, "NFS: Refreshing context for %s, old: %" PRId64 ", new: %" PRId64, exportname, it->second.lastAccessedTime, now);
       it->second.lastAccessedTime = now;
       pRet = it->second.pContext;
     }
@@ -177,7 +177,7 @@ int CNFSConnection::getContextForExport(const std::string& exportname)
 
   if(!m_pNfsContext)
   {
-    kodi::Log(ADDON_LOG_DEBUG,"NFS: Context for %s not open - get a new context.", exportname.c_str());
+    kodi::Log(ADDON_LOG_DEBUG,"NFS: Context for %s not open - get a new context.", exportname);
     m_pNfsContext = nfs_init_context();
 
     if(!m_pNfsContext)
@@ -284,11 +284,11 @@ bool CNFSConnection::Connect(const VFSURL& url, std::string& relativePath)
 
       if(nfsRet != 0)
       {
-        kodi::Log(ADDON_LOG_ERROR,"NFS: Failed to mount nfs share: %s %s (%s)\n", m_resolvedHostName.c_str(), exportPath.c_str(), nfs_get_error(m_pNfsContext));
+        kodi::Log(ADDON_LOG_ERROR,"NFS: Failed to mount nfs share: %s %s (%s)", m_resolvedHostName, exportPath, nfs_get_error(m_pNfsContext));
         destroyContext(std::string(url.hostname) + exportPath);
         return false;
       }
-      kodi::Log(ADDON_LOG_DEBUG,"NFS: Connected to server %s and export %s\n", url.hostname, exportPath.c_str());
+      kodi::Log(ADDON_LOG_DEBUG,"NFS: Connected to server %s and export %s", url.hostname, exportPath);
     }
     m_exportPath = exportPath;
     m_hostName = url.hostname;
@@ -433,11 +433,11 @@ int CNFSConnection::stat(const VFSURL& url, struct stat *statbuff)
       }
       else
       {
-        kodi::Log(ADDON_LOG_ERROR,"NFS: Failed to mount nfs share: %s (%s)\n", exportPath.c_str(), nfs_get_error(m_pNfsContext));
+        kodi::Log(ADDON_LOG_ERROR,"NFS: Failed to mount nfs share: %s (%s)", exportPath, nfs_get_error(m_pNfsContext));
       }
 
       nfs_destroy_context(pTmpContext);
-      kodi::Log(ADDON_LOG_DEBUG,"NFS: Connected to server %s and export %s in tmpContext\n", url.hostname, exportPath.c_str());
+      kodi::Log(ADDON_LOG_DEBUG,"NFS: Connected to server %s and export %s in tmpContext", url.hostname, exportPath);
     }
   }
 
