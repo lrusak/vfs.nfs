@@ -19,6 +19,7 @@
  */
 
 #include "NFSConnection.h"
+#include "utils/CommonDefines.h"
 
 struct NFSContext
 {
@@ -59,13 +60,13 @@ protected:
   bool GetServerList(std::vector<kodi::vfs::CDirEntry>& items);
   bool ResolveSymlink(const VFSURL& url, struct nfsdirent *dirent, std::string& resolvedUrl);
   bool IsValidFile(const std::string& strFileName);
-  int64_t m_fileSize;
-  struct nfsfh *m_pFileHandle;
-  struct nfs_context *m_pNfsContext;//current nfs context
+  int64_t m_fileSize = -1;
+  struct nfsfh *m_pFileHandle = nullptr;
+  struct nfs_context *m_pNfsContext = nullptr;//current nfs context
   std::string m_exportPath;
 };
 
-class CMyAddon : public kodi::addon::CAddonBase
+class DLL_PRIVATE CMyAddon : public kodi::addon::CAddonBase
 {
 public:
   CMyAddon() { }

@@ -17,7 +17,8 @@ include_directories(${KODI_INCLUDE_DIR}/.. # Hack way with "/..", need bigger Ko
                     ${NFS_INCLUDE_DIRS})
 
 set(NFS_HEADERS src/NFSConnection.h
-                src/NFSFile.h)
+                src/NFSFile.h
+                src/utils/CommonDefines.h)
 
 set(NFS_SOURCES src/NFSConnection.cpp
                 src/NFSFile.cpp)
