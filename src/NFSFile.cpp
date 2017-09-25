@@ -597,7 +597,7 @@ bool CNFSFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
       P8PLATFORM::FileTimeToLocalFileTime(&fileTime, &localTime);*/
 
       kodi::vfs::CDirEntry pItem;
-      pItem.SetLabel(strdup(tmpDirent.name));
+      pItem.SetLabel(tmpDirent.name);
       //pItem.mtime = localTime;
       pItem.SetSize(iSize);
 
@@ -614,13 +614,13 @@ bool CNFSFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
 
       if (strName[0] == '.')
       {
-        pItem.AddProperty(strdup("file:hidden"), strdup("true"));
+        pItem.AddProperty("file:hidden", "true");
       }
       else
       {
         pItem.ClearProperties();
       }
-      pItem.SetPath(strdup(path.c_str()));
+      pItem.SetPath(path.c_str());
       items.push_back(pItem);
     }
   }
@@ -643,11 +643,11 @@ bool CNFSFile::GetDirectoryFromExportList(const std::string& strPath, std::vecto
       nonConstStrPath.erase(nonConstStrPath.end()-1);
 
     kodi::vfs::CDirEntry pItem;
-    pItem.SetLabel(strdup(currentExport.c_str()));
+    pItem.SetLabel(currentExport.c_str());
     std::string path(nonConstStrPath + currentExport);
     if (path[path.size()-1] != '/')
       path += '/';
-    pItem.SetPath(strdup(path.c_str()));
+    pItem.SetPath(path.c_str());
 
     pItem.SetFolder(true);
     pItem.ClearProperties();
@@ -673,8 +673,8 @@ bool CNFSFile::GetServerList(std::vector<kodi::vfs::CDirEntry>& items)
     std::string path(std::string("nfs://") + currentExport);
     if (path[path.size()-1] != '/')
       path += '/';
-    pItem.SetPath(strdup(path.c_str()));
-    pItem.SetLabel(strdup(currentExport.c_str()));
+    pItem.SetPath(path.c_str());
+    pItem.SetLabel(currentExport.c_str());
     pItem.SetTitle("");
 
     pItem.SetFolder(true);
