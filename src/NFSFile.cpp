@@ -166,7 +166,7 @@ ssize_t CNFSFile::Read(void* context, void* lpBuf, size_t uiBufSize)
 
   //something went wrong ...
   if (numberOfBytesRead < 0)
-    kodi::Log(ADDON_LOG_ERROR, "%s - Error( %d, %s )", __FUNCTION__, numberOfBytesRead, nfs_get_error(ctx->pNfsContext));
+    kodi::Log(ADDON_LOG_ERROR, "%s - Error( %" PRId64", %s )", __FUNCTION__, (int64_t)numberOfBytesRead, nfs_get_error(ctx->pNfsContext));
 
   return numberOfBytesRead;
 }
@@ -183,7 +183,7 @@ ssize_t CNFSFile::Write(void* context, const void* lpBuf, size_t uiBufSize)
   ssize_t numberOfBytesWritten = 0;
   ssize_t writtenBytes = 0;
   size_t leftBytes = uiBufSize;
-  //clamp max write chunksize to 32kb - fixme - this might be superfluious with future libnfs versions
+  //clamp max write chunksize to 32kb - fixme - this might be superfluous with future libnfs versions
   size_t chunkSize = CNFSConnection::Get().GetMaxWriteChunkSize() > 32768 ? 32768 : CNFSConnection::Get().GetMaxWriteChunkSize();
 
   P8PLATFORM::CLockObject lock(CNFSConnection::Get());
@@ -354,7 +354,7 @@ bool CNFSFile::Close(void* context)
     int ret = 0;
     kodi::Log(ADDON_LOG_DEBUG,"CNFSFile::Close closing file %s", ctx->filename.c_str());
     // remove it from keep alive list before closing
-    // so keep alive code doens't process it anymore
+    // so keep alive code doesn't process it anymore
     CNFSConnection::Get().removeFromKeepAliveList(ctx->pFileHandle);
     ret = nfs_close(ctx->pNfsContext, ctx->pFileHandle);
 
@@ -530,7 +530,7 @@ bool CNFSFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
   if(!CNFSConnection::Get().Connect(url, strDirName))
   {
     std::cout << "conn fail" << std::endl;
-    //connect has failed - so try to get the exported filesystms if no path is given to the url
+    //connect has failed - so try to get the exported filesystems if no path is given to the url
     if (!strlen(url.sharename))
     {
       if(!strlen(url.hostname))
@@ -562,32 +562,33 @@ bool CNFSFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
 
   while((nfsdirent = nfs_readdir(CNFSConnection::Get().GetNfsContext(), nfsdir)) != NULL)
   {
-    std::string strName = nfsdirent->name;
+    struct nfsdirent tmpDirent = *nfsdirent;
+    std::string strName = tmpDirent.name;
     std::string path(myStrPath + strName);
     int64_t iSize = 0;
     bool bIsDir = false;
     int64_t lTimeDate = 0;
 
     //reslove symlinks
-    if(nfsdirent->type == NF3LNK)
+    if(tmpDirent.type == NF3LNK)
     {
-      //resolve symlink changes nfsdirent and strName
-      if(!ResolveSymlink(url, nfsdirent, path))
+      //resolve symlink changes tmpDirent and strName
+      if(!ResolveSymlink(url, &tmpDirent, path))
       {
         continue;
       }
     }
 
-    iSize = nfsdirent->size;
-    bIsDir = nfsdirent->type == NF3DIR;
-    lTimeDate = nfsdirent->mtime.tv_sec;
+    iSize = tmpDirent.size;
+    bIsDir = tmpDirent.type == NF3DIR;
+    lTimeDate = tmpDirent.mtime.tv_sec;
 
     if (strName != "." && strName != ".."
                        && strName != "lost+found")
     {
       if(lTimeDate == 0) // if modification date is missing, use create date
       {
-        lTimeDate = nfsdirent->ctime.tv_sec;
+        lTimeDate = tmpDirent.ctime.tv_sec;
       }
 
       /*LONGLONG ll = P8PLATFORM::Int32x32To64(lTimeDate & 0xffffffff, 10000000) + 116444736000000000ll;
@@ -596,7 +597,7 @@ bool CNFSFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
       P8PLATFORM::FileTimeToLocalFileTime(&fileTime, &localTime);*/
 
       kodi::vfs::CDirEntry pItem;
-      pItem.SetLabel(strdup(nfsdirent->name));
+      pItem.SetLabel(strdup(tmpDirent.name));
       //pItem.mtime = localTime;
       pItem.SetSize(iSize);
 
@@ -635,7 +636,7 @@ bool CNFSFile::GetDirectoryFromExportList(const std::string& strPath, std::vecto
   std::list<std::string> exportList=CNFSConnection::Get().GetExportList();
   std::list<std::string>::iterator it;
 
-  for(it=exportList.begin();it!=exportList.end();it++)
+  for(it=exportList.begin();it!=exportList.end();++it)
   {
     std::string currentExport(*it);
     if (!nonConstStrPath.empty() && nonConstStrPath[nonConstStrPath.size()-1] == '/')
@@ -713,7 +714,7 @@ bool CNFSFile::ResolveSymlink(const VFSURL& url, struct nfsdirent *dirent, std::
     if(resolvedLink[0] == '/')
     {
       //use the special stat function for using an extra context
-      //because we are inside of a dir traversation
+      //because we are inside of a dir traversal
       //and just can't change the global nfs context here
       //without destroying something...
       fullpath = resolvedLink;
@@ -730,7 +731,7 @@ bool CNFSFile::ResolveSymlink(const VFSURL& url, struct nfsdirent *dirent, std::
     {
       kodi::Log(ADDON_LOG_ERROR, "NFS: Failed to stat(%s) on link resolve %s\n",
                 fullpath.c_str(), nfs_get_error(CNFSConnection::Get().GetNfsContext()));
-      retVal = false;;
+      retVal = false;
     }
     else
     {
