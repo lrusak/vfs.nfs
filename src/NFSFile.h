@@ -65,7 +65,7 @@ protected:
   std::string m_exportPath;
 };
 
-class CMyAddon : public kodi::addon::CAddonBase
+class ATTRIBUTE_HIDDEN CMyAddon : public kodi::addon::CAddonBase
 {
 public:
   CMyAddon() { }
