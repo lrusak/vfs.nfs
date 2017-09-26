@@ -43,7 +43,7 @@ void* CNFSFile::Open(const VFSURL& url)
   if (!IsValidFile(url.filename))
   {
     kodi::Log(ADDON_LOG_NOTICE,"NFS: Bad URL : '%s'", url.filename);
-    return NULL;
+    return nullptr;
   }
 
   std::string filename;
@@ -52,7 +52,7 @@ void* CNFSFile::Open(const VFSURL& url)
 
   if(!CNFSConnection::Get().Connect(url, filename))
   {
-    return NULL;
+    return nullptr;
   }
 
   NFSContext* result = new NFSContext;
@@ -66,7 +66,7 @@ void* CNFSFile::Open(const VFSURL& url)
   {
     kodi::Log(ADDON_LOG_INFO, "CNFSFile::Open: Unable to open file : '%s'  error : '%s'", url, nfs_get_error(result->pNfsContext));
     delete result;
-    return NULL;
+    return nullptr;
   }
 
   kodi::Log(ADDON_LOG_DEBUG,"CNFSFile::Open - opened %s", filename);
@@ -77,7 +77,7 @@ void* CNFSFile::Open(const VFSURL& url)
   if( Stat(url, &tmpBuffer) )
   {
     Close(result);
-    return NULL;
+    return nullptr;
   }
 
   result->size = tmpBuffer.st_size;//cache the size of this file
@@ -92,14 +92,14 @@ void* CNFSFile::OpenForWrite(const VFSURL& url, bool bOverWrite)
   // we can't open files like nfs://file.f or nfs://server/file.f
   // if a file matches the if below return false, it can't exist on a nfs share.
   if (!IsValidFile(url.filename))
-    return NULL;
+    return nullptr;
 
   P8PLATFORM::CLockObject lock(CNFSConnection::Get());
   std::string filename;
 
   if(!CNFSConnection::Get().Connect(url, filename))
   {
-    return NULL;
+    return nullptr;
   }
 
   NFSContext* result = new NFSContext;
@@ -115,19 +115,19 @@ void* CNFSFile::OpenForWrite(const VFSURL& url, bool bOverWrite)
     if(ret == 0)
     {
       nfs_close(result->pNfsContext, result->pFileHandle);
-      result->pFileHandle = NULL;
+      result->pFileHandle = nullptr;
     }
   }
 
   ret = nfs_open(result->pNfsContext, filename.c_str(), O_RDWR, &result->pFileHandle);
 
-  if (ret || result->pFileHandle == NULL)
+  if (ret || result->pFileHandle == nullptr)
   {
     // write error to logfile
     kodi::Log(ADDON_LOG_ERROR, "CNFSFile::Open: Unable to open file : '%s' error : '%s'",
               filename, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
     delete result;
-    return NULL;
+    return nullptr;
   }
   result->filename = url.filename;
 
@@ -139,7 +139,7 @@ void* CNFSFile::OpenForWrite(const VFSURL& url, bool bOverWrite)
     if( Stat(url, &tmpBuffer) )
     {
       Close(result);
-      return NULL;
+      return nullptr;
     }
 
     result->size = tmpBuffer.st_size;//cache the size of this file
@@ -276,7 +276,7 @@ int64_t CNFSFile::GetPosition(void* context)
   int ret = 0;
   uint64_t offset = 0;
 
-  if (CNFSConnection::Get().GetNfsContext() == NULL || ctx->pFileHandle == NULL)
+  if (CNFSConnection::Get().GetNfsContext() == nullptr || ctx->pFileHandle == nullptr)
     return 0;
 
   P8PLATFORM::CLockObject lock(CNFSConnection::Get());
@@ -313,8 +313,8 @@ int CNFSFile::Stat(const VFSURL& url, struct __stat64* buffer)
 
   ret = nfs_stat(CNFSConnection::Get().GetNfsContext(), filename.c_str(), &tmpBuffer);
 
-  //if buffer == NULL we where called from Exists - in that case don't spam the log with errors
-  if (ret != 0 && buffer != NULL)
+  //if buffer == nullptr we where called from Exists - in that case don't spam the log with errors
+  if (ret != 0 && buffer != nullptr)
   {
     kodi::Log(ADDON_LOG_ERROR, "NFS: Failed to stat(%s) %s", url.filename, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
     ret = -1;
@@ -349,7 +349,7 @@ bool CNFSFile::Close(void* context)
   P8PLATFORM::CLockObject lock(CNFSConnection::Get());
   CNFSConnection::Get().AddIdleConnection();
 
-  if (ctx->pFileHandle != NULL && ctx->pNfsContext != NULL)
+  if (ctx->pFileHandle != nullptr && ctx->pNfsContext != nullptr)
   {
     int ret = 0;
     kodi::Log(ADDON_LOG_DEBUG,"CNFSFile::Close closing file %s", ctx->filename.c_str());
@@ -371,7 +371,7 @@ bool CNFSFile::Close(void* context)
 
 bool CNFSFile::Exists(const VFSURL& url)
 {
-  return Stat(url, NULL) == 0;
+  return Stat(url, nullptr) == 0;
 }
 
 void CNFSFile::ClearOutIdle()
@@ -548,8 +548,8 @@ bool CNFSFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
     }
   }
 
-  struct nfsdir *nfsdir = NULL;
-  struct nfsdirent *nfsdirent = NULL;
+  struct nfsdir *nfsdir = nullptr;
+  struct nfsdirent *nfsdirent = nullptr;
 
   ret = nfs_opendir(CNFSConnection::Get().GetNfsContext(), strDirName.c_str(), &nfsdir);
 
@@ -560,7 +560,7 @@ bool CNFSFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
   }
   lock.Unlock();
 
-  while((nfsdirent = nfs_readdir(CNFSConnection::Get().GetNfsContext(), nfsdir)) != NULL)
+  while((nfsdirent = nfs_readdir(CNFSConnection::Get().GetNfsContext(), nfsdir)) != nullptr)
   {
     struct nfsdirent tmpDirent = *nfsdirent;
     std::string strName = tmpDirent.name;
@@ -636,9 +636,9 @@ bool CNFSFile::GetDirectoryFromExportList(const std::string& strPath, std::vecto
   std::list<std::string> exportList=CNFSConnection::Get().GetExportList();
   std::list<std::string>::iterator it;
 
-  for(it=exportList.begin();it!=exportList.end();++it)
+  for (const auto& entry : exportList)
   {
-    std::string currentExport(*it);
+    std::string currentExport(entry);
     if (!nonConstStrPath.empty() && nonConstStrPath[nonConstStrPath.size()-1] == '/')
       nonConstStrPath.erase(nonConstStrPath.end()-1);
 

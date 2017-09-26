@@ -53,7 +53,7 @@ CNFSConnection& CNFSConnection::Get()
 }
 
 CNFSConnection::CNFSConnection()
-: m_pNfsContext(NULL)
+: m_pNfsContext(nullptr)
 , m_exportPath("")
 , m_hostName("")
 , m_resolvedHostName("")
@@ -84,7 +84,7 @@ std::list<std::string> CNFSConnection::GetExportList()
   exportlist = mount_getexports(m_resolvedHostName.c_str());
   tmp = exportlist;
 
-  for(tmp = exportlist; tmp!=NULL; tmp=tmp->ex_next)
+  for(tmp = exportlist; tmp!=nullptr; tmp=tmp->ex_next)
   {
     retList.push_back(std::string(tmp->ex_dir));
   }
@@ -108,15 +108,15 @@ void CNFSConnection::clearMembers()
   m_exportList.clear();
   m_writeChunkSize = 0;
   m_readChunkSize = 0;
-  m_pNfsContext = NULL;
+  m_pNfsContext = nullptr;
 }
 
 void CNFSConnection::destroyOpenContexts()
 {
   m_openContextLock.Lock();
-  for(tOpenContextMap::iterator it = m_openContextMap.begin();it!=m_openContextMap.end();++it)
+  for (const auto& entry : m_openContextMap)
   {
-    nfs_destroy_context(it->second.pContext);
+    nfs_destroy_context(entry.second.pContext);
   }
   m_openContextMap.clear();
   m_openContextLock.Unlock();
@@ -125,7 +125,7 @@ void CNFSConnection::destroyOpenContexts()
 void CNFSConnection::destroyContext(const std::string& exportName)
 {
   m_openContextLock.Lock();
-  tOpenContextMap::iterator it = m_openContextMap.find(exportName);
+  auto it = m_openContextMap.find(exportName);
   if (it != m_openContextMap.end())
   {
     nfs_destroy_context(it->second.pContext);
@@ -136,10 +136,10 @@ void CNFSConnection::destroyContext(const std::string& exportName)
 
 struct nfs_context *CNFSConnection::getContextFromMap(const std::string& exportname, bool forceCacheHit/* = false*/)
 {
-  struct nfs_context *pRet = NULL;
+  struct nfs_context *pRet = nullptr;
   m_openContextLock.Lock();
 
-  tOpenContextMap::iterator it = m_openContextMap.find(exportname);
+  auto it = m_openContextMap.find(exportname);
   if(it != m_openContextMap.end())
   {
     //check if context has timed out already
@@ -157,7 +157,7 @@ struct nfs_context *CNFSConnection::getContextFromMap(const std::string& exportn
     else
     {
       //context is timed out
-      //destroy it and return NULL
+      //destroy it and return nullptr
       kodi::Log(ADDON_LOG_DEBUG, "NFS: Old context timed out - destroying it");
       nfs_destroy_context(it->second.pContext);
       m_openContextMap.erase(it);
@@ -235,12 +235,12 @@ bool CNFSConnection::splitUrlIntoExportAndPath(const std::string& hostname,
 
     std::list<std::string>::iterator it;
 
-    for(it=m_exportList.begin();it!=m_exportList.end();++it)
+    for (const auto& entry : m_exportList)
     {
       //if path starts with the current export path
-      if(path.compare(0, it->size(), *it) == 0)
+      if(path.compare(0, entry.size(), entry) == 0)
       {
-        exportPath = *it;
+        exportPath = entry;
         //handle special case where root is exported
         //in that case we don't want to strip off to
         //much from the path
@@ -309,7 +309,7 @@ void CNFSConnection::Deinit()
   if(m_pNfsContext)
   {
     destroyOpenContexts();
-    m_pNfsContext = NULL;
+    m_pNfsContext = nullptr;
   }
   clearMembers();
   // clear any keep alive timouts on deinit
@@ -321,7 +321,7 @@ void CNFSConnection::CheckIfIdle()
 {
   /* We check if there are open connections. This is done without a lock to not halt the mainthread. It should be thread safe as
    worst case scenario is that m_OpenConnections could read 0 and then changed to 1 if this happens it will enter the if wich will lead to another check, wich is locked.  */
-  if (m_OpenConnections == 0 && m_pNfsContext != NULL)
+  if (m_OpenConnections == 0 && m_pNfsContext != nullptr)
   { /* I've set the the maximum IDLE time to be 1 min and 30 sec. */
     P8PLATFORM::CLockObject lock(*this);
     if (m_OpenConnections == 0 /* check again - when locked */)
@@ -338,21 +338,21 @@ void CNFSConnection::CheckIfIdle()
     }
   }
 
-  if( m_pNfsContext != NULL )
+  if( m_pNfsContext != nullptr )
   {
     P8PLATFORM::CLockObject lock(m_keepAliveLock);
     //handle keep alive on opened files
-    for( tFileKeepAliveMap::iterator it = m_KeepAliveTimeouts.begin();it!=m_KeepAliveTimeouts.end();++it)
+    for (auto& entry : m_KeepAliveTimeouts)
     {
-      if(it->second.refreshCounter > 0)
+      if(entry.second.refreshCounter > 0)
       {
-        it->second.refreshCounter--;
+        entry.second.refreshCounter--;
       }
       else
       {
-        keepAlive(it->second.exportPath, it->first);
+        keepAlive(entry.second.exportPath, entry.first);
         //reset timeout
-        resetKeepAlive(it->second.exportPath, it->first);
+        resetKeepAlive(entry.second.exportPath, entry.first);
       }
     }
   }
@@ -413,7 +413,7 @@ int CNFSConnection::stat(const VFSURL& url, struct stat *statbuff)
   int nfsRet = 0;
   std::string exportPath;
   std::string relativePath;
-  struct nfs_context *pTmpContext = NULL;
+  struct nfs_context *pTmpContext = nullptr;
 
   resolveHost(url.hostname);
 
