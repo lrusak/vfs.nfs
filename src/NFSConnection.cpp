@@ -150,7 +150,7 @@ struct nfs_context *CNFSConnection::getContextFromMap(const std::string& exportn
       //refresh access time of that
       //context and return it
       if (!forceCacheHit) // only log it if this isn't the resetkeepalive on each read ;)
-        kodi::Log(ADDON_LOG_DEBUG, "NFS: Refreshing context for %s, old: %" PRId64 ", new: %" PRId64, exportname, it->second.lastAccessedTime, now);
+        kodi::Log(ADDON_LOG_DEBUG, "NFS: Refreshing context for %s, old: %" PRId64 ", new: %" PRId64, exportname.c_str(), it->second.lastAccessedTime, now);
       it->second.lastAccessedTime = now;
       pRet = it->second.pContext;
     }
@@ -177,7 +177,7 @@ int CNFSConnection::getContextForExport(const std::string& exportname)
 
   if(!m_pNfsContext)
   {
-    kodi::Log(ADDON_LOG_DEBUG,"NFS: Context for %s not open - get a new context.", exportname);
+    kodi::Log(ADDON_LOG_DEBUG,"NFS: Context for %s not open - get a new context.", exportname.c_str());
     m_pNfsContext = nfs_init_context();
 
     if(!m_pNfsContext)
@@ -284,11 +284,11 @@ bool CNFSConnection::Connect(const VFSURL& url, std::string& relativePath)
 
       if(nfsRet != 0)
       {
-        kodi::Log(ADDON_LOG_ERROR,"NFS: Failed to mount nfs share: %s %s (%s)", m_resolvedHostName, exportPath, nfs_get_error(m_pNfsContext));
+        kodi::Log(ADDON_LOG_ERROR,"NFS: Failed to mount nfs share: %s %s (%s)", m_resolvedHostName.c_str(), exportPath.c_str(), nfs_get_error(m_pNfsContext));
         destroyContext(std::string(url.hostname) + exportPath);
         return false;
       }
-      kodi::Log(ADDON_LOG_DEBUG,"NFS: Connected to server %s and export %s", url.hostname, exportPath);
+      kodi::Log(ADDON_LOG_DEBUG,"NFS: Connected to server %s and export %s", url.hostname, exportPath.c_str());
     }
     m_exportPath = exportPath;
     m_hostName = url.hostname;
@@ -400,7 +400,7 @@ void CNFSConnection::keepAlive(std::string _exportPath, struct nfsfh  *_pFileHan
   if (!pContext)// this should normally never happen - paranoia
     pContext = m_pNfsContext;
 
-  kodi::Log(ADDON_LOG_NOTICE, "NFS: sending keep alive after %i s.",KEEP_ALIVE_TIMEOUT/2);
+  kodi::Log(ADDON_LOG_NOTICE, "NFS: sending keep alive after %i s.", KEEP_ALIVE_TIMEOUT/2);
   P8PLATFORM::CLockObject lock(*this);
   nfs_lseek(pContext, _pFileHandle, 0, SEEK_CUR, &offset);
   nfs_read(pContext, _pFileHandle, 32, buffer);
@@ -433,11 +433,11 @@ int CNFSConnection::stat(const VFSURL& url, struct stat *statbuff)
       }
       else
       {
-        kodi::Log(ADDON_LOG_ERROR,"NFS: Failed to mount nfs share: %s (%s)", exportPath, nfs_get_error(m_pNfsContext));
+        kodi::Log(ADDON_LOG_ERROR,"NFS: Failed to mount nfs share: %s (%s)", exportPath.c_str(), nfs_get_error(m_pNfsContext));
       }
 
       nfs_destroy_context(pTmpContext);
-      kodi::Log(ADDON_LOG_DEBUG,"NFS: Connected to server %s and export %s in tmpContext", url.hostname, exportPath);
+      kodi::Log(ADDON_LOG_DEBUG,"NFS: Connected to server %s and export %s in tmpContext", url.hostname, exportPath.c_str());
     }
   }
 

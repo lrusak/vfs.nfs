@@ -64,12 +64,12 @@ void* CNFSFile::Open(const VFSURL& url)
 
   if (ret != 0)
   {
-    kodi::Log(ADDON_LOG_INFO, "CNFSFile::Open: Unable to open file : '%s'  error : '%s'", url, nfs_get_error(result->pNfsContext));
+    kodi::Log(ADDON_LOG_INFO, "CNFSFile::Open: Unable to open file : '%s'  error : '%s'", url.filename, nfs_get_error(result->pNfsContext));
     delete result;
     return nullptr;
   }
 
-  kodi::Log(ADDON_LOG_DEBUG,"CNFSFile::Open - opened %s", filename);
+  kodi::Log(ADDON_LOG_DEBUG,"CNFSFile::Open - opened %s", filename.c_str());
   result->filename = url.filename;
 
   struct __stat64 tmpBuffer;
@@ -108,7 +108,7 @@ void* CNFSFile::OpenForWrite(const VFSURL& url, bool bOverWrite)
 
   if (bOverWrite)
   {
-    kodi::Log(ADDON_LOG_INFO, "FileNFS::OpenForWrite() called with overwriting enabled! - %s", filename);
+    kodi::Log(ADDON_LOG_INFO, "FileNFS::OpenForWrite() called with overwriting enabled! - %s", filename.c_str());
     //create file with proper permissions
     ret = nfs_creat(result->pNfsContext, filename.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, &result->pFileHandle);
     //if file was created the file handle isn't valid ... so close it and open later
@@ -125,7 +125,7 @@ void* CNFSFile::OpenForWrite(const VFSURL& url, bool bOverWrite)
   {
     // write error to logfile
     kodi::Log(ADDON_LOG_ERROR, "CNFSFile::Open: Unable to open file : '%s' error : '%s'",
-              filename, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
+              filename.c_str(), nfs_get_error(CNFSConnection::Get().GetNfsContext()));
     delete result;
     return nullptr;
   }
@@ -285,7 +285,7 @@ int64_t CNFSFile::GetPosition(void* context)
 
   if (ret < 0)
   {
-    kodi::Log(ADDON_LOG_ERROR, "NFS: Failed to lseek(%s)",nfs_get_error(CNFSConnection::Get().GetNfsContext()));
+    kodi::Log(ADDON_LOG_ERROR, "NFS: Failed to lseek(%s)", nfs_get_error(CNFSConnection::Get().GetNfsContext()));
   }
   return offset;
 }
@@ -399,8 +399,7 @@ bool CNFSFile::Delete(const VFSURL& url)
 
   if(ret != 0)
   {
-    kodi::Log(ADDON_LOG_ERROR, "%s - Error( %s )", __FUNCTION__,
-              nfs_get_error(CNFSConnection::Get().GetNfsContext()));
+    kodi::Log(ADDON_LOG_ERROR, "%s - Error( %s )", __FUNCTION__, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
   }
 
   return (ret == 0);
@@ -425,8 +424,7 @@ bool CNFSFile::Rename(const VFSURL& url, const VFSURL& url2)
 
   if(ret != 0)
   {
-    kodi::Log(ADDON_LOG_ERROR, "%s - Error( %s )",
-              __FUNCTION__, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
+    kodi::Log(ADDON_LOG_ERROR, "%s - Error( %s )", __FUNCTION__, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
   }
 
   return (ret == 0);
@@ -478,8 +476,7 @@ bool CNFSFile::RemoveDirectory(const VFSURL& url2)
 
   if(ret != 0 && errno != ENOENT)
   {
-    kodi::Log(ADDON_LOG_ERROR, "%s - Error( %s )", __FUNCTION__,
-              nfs_get_error(CNFSConnection::Get().GetNfsContext()));
+    kodi::Log(ADDON_LOG_ERROR, "%s - Error( %s )", __FUNCTION__, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
     return false;
   }
   return true;
@@ -509,8 +506,7 @@ bool CNFSFile::CreateDirectory(const VFSURL& url2)
 
   success = (ret == 0 || -EEXIST == ret);
   if(!success)
-    kodi::Log(ADDON_LOG_ERROR, "NFS: Failed to create(%s) %s",
-              folderName, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
+    kodi::Log(ADDON_LOG_ERROR, "NFS: Failed to create(%s) %s", folderName.c_str(), nfs_get_error(CNFSConnection::Get().GetNfsContext()));
 
   return success;
 }
@@ -555,7 +551,7 @@ bool CNFSFile::GetDirectory(const VFSURL& url, std::vector<kodi::vfs::CDirEntry>
 
   if(ret != 0)
   {
-    kodi::Log(ADDON_LOG_ERROR, "Failed to open(%s) %s", strDirName, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
+    kodi::Log(ADDON_LOG_ERROR, "Failed to open(%s) %s", strDirName.c_str(), nfs_get_error(CNFSConnection::Get().GetNfsContext()));
     return false;
   }
   lock.Unlock();
@@ -730,7 +726,7 @@ bool CNFSFile::ResolveSymlink(const VFSURL& url, struct nfsdirent *dirent, std::
     if (ret != 0)
     {
       kodi::Log(ADDON_LOG_ERROR, "NFS: Failed to stat(%s) on link resolve %s",
-                fullpath, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
+                fullpath.c_str(), nfs_get_error(CNFSConnection::Get().GetNfsContext()));
       retVal = false;
     }
     else
@@ -755,7 +751,7 @@ bool CNFSFile::ResolveSymlink(const VFSURL& url, struct nfsdirent *dirent, std::
   else
   {
     kodi::Log(ADDON_LOG_ERROR, "Failed to readlink(%s) %s",
-              fullpath, nfs_get_error(CNFSConnection::Get().GetNfsContext()));
+              fullpath.c_str(), nfs_get_error(CNFSConnection::Get().GetNfsContext()));
     retVal = false;
   }
   return retVal;
